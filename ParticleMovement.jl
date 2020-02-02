@@ -141,7 +141,7 @@ module ParticleMovement
    basicMovement(p::ParticleState) =
          ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
 
-   function handleCollisions(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
+   function handleCollisionsBetweenParticles(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
        result = []
        for (key, partition) in partition(particles, xdim, ydim, maxx, maxy)
            prev = missing
@@ -171,10 +171,10 @@ module ParticleMovement
       return dict
    end
 
-  @test 3 == length(handleCollisions(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+  @test 3 == length(handleCollisionsBetweenParticles(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
 
   progress(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64) =
-        handleCollisions(Set{ParticleState}([basicMovement(p) for p in particles]),
+        handleCollisionsBetweenParticles(Set{ParticleState}([basicMovement(p) for p in particles]),
                          xdim, ydim, maxx, maxy)
 
 
