@@ -142,26 +142,31 @@ module ParticleMovement
          ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
 
    function handleCollisions(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
-       result = Set{ParticleState}()
-       for (key, value) in partition(particles, xdim, ydim, maxx, maxy)
-       	   # XXX Missing: Actually handling collisions in the "value" set
-	   #     for this particular location.  Once we're able to run the code
-	   #     without calculating collision mechanics we'll add the collision mechanics.
-       	   result = union(result, value)
+       result = []
+       for (key, partition) in partition(particles, xdim, ydim, maxx, maxy)
+           prev = missing
+	   for p in partition
+	      if prev === missing
+                 prev = p
+               else
+                 a, prev = collide(prev, p)
+                 push!(result, a)
+               end
+           end
+           push!(result, prev)
        end
-       return result
+       return Set{ParticleState}(result)
    end
 
-   function partition(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)
+   function partition(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Dict{Tuple{Int64,Int64}, Set{ParticleState}}
       dict = Dict{Tuple{Int64, Int64}, Set{ParticleState}}()
       for p in particles
           coord = pointToImageCoord(p.pos, xdim, ydim, maxx, maxy)
-      	  if (coord in dict.keys)
-  	     push!(dict[coord], p)
-	  else
-             newSet = Set{ParticleState}([p])
-	     dict[coord] = newSet
-	  end
+          if (haskey(dict,coord))
+             push!(dict[coord], p)
+          else
+             dict[coord] = Set{ParticleState}([p])
+          end
       end
       return dict
    end
@@ -170,25 +175,25 @@ module ParticleMovement
 
   progress(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64) =
         handleCollisions(Set{ParticleState}([basicMovement(p) for p in particles]),
-	                 xdim, ydim, maxx, maxy)
+                         xdim, ydim, maxx, maxy)
 
 
   @test 3 == length(progress(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
 
    function movie(n::Int64)
          state = ParticleMovement.randomEnsemble(1.0, 1.0,  100.0, 100.0,  3000)
-	 xdim = 1000
-	 ydim = 1000
-	 maxx = 1000.
-	 maxy = 1000.
-	 result = ones(Gray{N0f8},1000, 1000, n) # One == white
-	 for i in 1:n
-	   println("length of  state = ", length(state))
-	   slice = view(result, :, :, i)
-	   imgOfParticles(slice, state, maxx, maxy)
-	   state = progress(state, xdim, ydim, maxx, maxy)
-	 end
-	 return result
+         xdim = 1000
+         ydim = 1000
+         maxx = 1000.
+         maxy = 1000.
+         result = ones(Gray{N0f8},1000, 1000, n) # One == white
+         for i in 1:n
+           println("Generating frame ", i , "/", n)
+           slice = view(result, :, :, i)
+           imgOfParticles(slice, state, maxx, maxy)
+           state = progress(state, xdim, ydim, maxx, maxy)
+         end
+         return result
    end
 
 
@@ -196,48 +201,48 @@ module ParticleMovement
    # using Images
 
    # function writevideo(fname, imgstack::Array{<:Color,3};
-   # 		       overwrite=true, fps=30::UInt, options=``)
+   #                   overwrite=true, fps=30::UInt, options=``)
    #     ow = overwrite ? `-y` : `-n`
    #     h, w, nframes = size(imgstack)
 
    #     open(`ffmpeg
-   # 	       -loglevel warning
-   # 	       $ow
-   # 	       -f rawvideo
-   # 	       -pix_fmt rgb24
-   # 	       -s:v $(h)x$(w)
-   # 	       -r $fps
-   # 	       -i pipe:0
-   # 	       $options
-   # 	       -vf "transpose=0"
-   # 	       -pix_fmt yuv420p
-   # 	       $fname`, "w") do out
-   # 	   for i = 1:nframes
-   # 	       write(out, convert.(RGB{N0f8}, clamp01.(imgstack[:,:,i])))
-   # 	   endfpp= ParticleMovement.movie(5)
+   #           -loglevel warning
+   #           $ow
+   #           -f rawvideo
+   #           -pix_fmt rgb24
+   #           -s:v $(h)x$(w)
+   #           -r $fps
+   #           -i pipe:0
+   #           $options
+   #           -vf "transpose=0"
+   #           -pix_fmt yuv420p
+   #           $fname`, "w") do out
+   #       for i = 1:nframes
+   #           write(out, convert.(RGB{N0f8}, clamp01.(imgstack[:,:,i])))
+   #       endfpp= ParticleMovement.movie(5)
    #     end
    # end
 
    # function writevideo(fname, imgstack::Array{<:Gray,3};
-   # 		       overwrite=true, fps=30::Int, options=``)
+   #                   overwrite=true, fps=30::Int, options=``)
    #     ow = overwrite ? `-y` : `-n`
    #     h, w, nframes = size(imgstack)
 
    #     open(`ffmpeg
-   # 	       -loglevel warning
-   # 	       $ow
-   # 	       -f rawvideo
-   # 	       -pix_fmt rgb24
-   # 	       -s:v $(h)x$(w)
-   # 	       -r $fps
-   # 	       -i pipe:0
-   # 	       $options
-   # 	       -vf "transpose=0"
-   # 	       -pix_fmt yuv420p
-   # 	       $fname`, "w") do out
-   # 	   for i = 1:nframes
-   # 	       write(out, convert.(RGB{N0f8}, clamp01.(imgstack[:,:,i])))
-   # 	   end
+   #           -loglevel warning
+   #           $ow
+   #           -f rawvideo
+   #           -pix_fmt rgb24
+   #           -s:v $(h)x$(w)
+   #           -r $fps
+   #           -i pipe:0
+   #           $options
+   #           -vf "transpose=0"
+   #           -pix_fmt yuv420p
+   #           $fname`, "w") do out
+   #       for i = 1:nframes
+   #           write(out, convert.(RGB{N0f8}, clamp01.(imgstack[:,:,i])))
+   #       end
    #     end
    # end
 
