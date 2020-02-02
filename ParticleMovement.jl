@@ -152,7 +152,7 @@ module ParticleMovement
        return result
    end
 
-   Function partition(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)
+   function partition(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)
       dict = Dict{Tuple{Int64, Int64}, Set{ParticleState}}()
       for p in particles
           coord = pointToImageCoord(p.pos, xdim, ydim, maxx, maxy)
