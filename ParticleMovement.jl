@@ -55,6 +55,10 @@ module ParticleMovement
   struct Line
   	 p1::Point
 	 p2::Point
+	 a::Float64
+	 b::Float64
+	 c::Float64
+	 direction::Point
   end
 
   pointsOnDifferentSidesOfLine(l::Line, a::Point, b::Point) =
@@ -69,15 +73,33 @@ module ParticleMovement
       speed::  Point
   end
 
- ## XXX Reflections missing!
 
- sampleBarrier = Line(Point(1.0, 0), Point(2.0, 0))
+ sampleBarrier = Line(Point(1.0, 0), Point(2.0, 0), -1.0, 0.0, 1.0, Point(1,0))
  
- reflectThroughLine(l::Line, p::Point) = p
- reflectThroughLine(l::Line, p::ParticleState) = p
+ function reflectThroughLine(l::Line, p::Point) 
+    divisor = l.a^2 + l.b^2
+    prex = p.x * (l.a^2 - l.b^2) - 2*l.b*(l.a * p.y + l.c)
+    prey = p.y * (l.b^2 - l.a^2) - 2*l.a*(l.b * p.x + l.c)
+    return Point(prex/divisor, prey/divisor)
+ end
+
+ innerProduct(v1::Point, v2::Point) = v1.x*v2.x + v1.y*v2.y
+
+ vectorLength(p::Point) = p.x^2 + p.y^2
+
+ angleBetweenVectors(v1::Point, v2::Point) =
+     acos(innerProduct(v1, v2)/(vectorLength(v1) * vectorLength(v2)))
 
 
-  Base.show(z::ParticleState) =
+ function reflectThroughLine(l::Line, p::ParticleState)::ParticleState
+   newPos   = reflectThroughLine(l, p.pos)
+   angle    = angleBetweenVectors(l.direction, p.speed)
+   newSpeed = rotate(p.speed, 2*angle)
+   return ParticleState(p.id, p.mass, newPos, newSpeed)
+ end
+
+
+ Base.show(z::ParticleState) =
           print("Particle (mass=", z , ", pos=", z.pos, ", speed = ", z.speed, ")")
 
   (==)(a::ParticleState, b::ParticleState) = a.mass == b.mass && a.pos == b.pos && a.speed == b.speed
@@ -161,7 +183,7 @@ module ParticleMovement
 
       # Handling reflections via a line bar
       if pointsOnDifferentSidesOfLine(sampleBarrier, p.pos, pPrime.pos)
-        pPrime = reflectThroughLine(sampleBarrier, pPrime)
+         pPrime = reflectThroughLine(sampleBarrier, pPrime)
       end
 
       return pPrime
