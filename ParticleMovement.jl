@@ -21,7 +21,7 @@ module ParticleMovement
   using Plots
 
   using Images, TestImages, Colors, ImageView, GtkReactive
-  import Base.+
+  Import Base.+
   import Base.-
   import Base.*
   import Base.==
@@ -177,6 +177,7 @@ module ParticleMovement
    #     - Did the particle cross the curve?, if so then
    #         - Calculate a perfectly elastic collision between the curve and the particle,
    #               modifying the movement
+   #  - Draw the barriers particles can collide against
 
    function  basicMovement(p::ParticleState) 
       pPrime =  ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
@@ -310,4 +311,4 @@ module ParticleMovement
 
    runSmoketest(frames::Int=200, particles::Int=10000) = imshow(ParticleMovement.movie(frames, particles))
 
-end
+End
