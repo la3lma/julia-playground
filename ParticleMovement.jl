@@ -52,12 +52,29 @@ module ParticleMovement
   @test Point(0.,0.) != Point(0.0, 1.)
 
 
+  struct Line
+  	 p1::Point
+	 p2::Point
+  end
+
+  pointsOnDifferentSidesOfLine(l::Line, a::Point, b::Point) =
+     return ((l.p1.y - l.p2.y) * (a.x - l.p1.x)  + (l.p2.x - l.p1.x) * (a.y - l.p1.y)) *
+            ((l.p1.y - l.p2.y) * (b.x - l.p1.x) +  (l.p2.x - l.p1.x) * (b.y - l.p1.y)) < 0
+ 
+
   struct ParticleState
       id::     Int64
       mass::   Float64
       pos::    Point
       speed::  Point
   end
+
+ ## XXX Reflections missing!
+
+ sampleBarrier = Line(Point(1.0, 0), Point(2.0, 0))
+ 
+ reflectThroughLine(l::Line, p::Point) = p
+ reflectThroughLine(l::Line, p::ParticleState) = p
 
 
   Base.show(z::ParticleState) =
@@ -134,12 +151,25 @@ module ParticleMovement
 
 
    # TODO:
-   #   - Then do collissions between particles (perfectly elastic)
-   #   - Then do collissions with walls
-   #   - Then consider adding multiple walls (stepwise  linear geometries)
+   #  - Add collisions with curves.   Do it like this:
+   #     - Did the particle cross the curve?, if so then
+   #         - Calculate a perfectly elastic collision between the curve and the particle,
+   #               modifying the movement
 
-   basicMovement(p::ParticleState) =
-         ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
+   function  basicMovement(p::ParticleState) 
+      pPrime =  ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
+
+      # Handling reflections via a line bar
+      if pointsOnDifferentSidesOfLine(sampleBarrier, p.pos, pPrime.pos)
+        pPrime = reflectThroughLine(sampleBarrier, pPrime)
+      end
+
+      return pPrime
+   end	     
+
+             
+	     
+
 
    function handleCollisionsBetweenParticles(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
        result = []
@@ -180,15 +210,15 @@ module ParticleMovement
 
   @test 3 == length(progress(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
 
-   function movie(n::Int64)
-         state = ParticleMovement.randomEnsemble(1.0, 1.0,  100.0, 100.0,  3000)
+   function movie(frames::Int64, particles::Int64)
+         state = ParticleMovement.randomEnsemble(1.0, 1.0,  100.0, 100.0,  particles)
          xdim = 1000
          ydim = 1000
          maxx = 1000.
          maxy = 1000.
-         result = ones(Gray{N0f8},1000, 1000, n) # One == white
-         for i in 1:n
-           println("Generating frame ", i , "/", n)
+         result = ones(Gray{N0f8},1000, 1000, frames) # One == white
+         for i in 1:frames
+           println("Generating frame ", i , "/", frames)
            slice = view(result, :, :, i)
            imgOfParticles(slice, state, maxx, maxy)
            state = progress(state, xdim, ydim, maxx, maxy)
@@ -256,6 +286,6 @@ module ParticleMovement
 
 
 
-   runSmoketest(i::Int) = imshow(ParticleMovement.movie(i))
+   runSmoketest(frames::Int=200, particles::Int=10000) = imshow(ParticleMovement.movie(frames, particles))
 
 end
