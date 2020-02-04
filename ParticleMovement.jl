@@ -39,10 +39,10 @@ module ParticleMovement
           print("{", p.x, ",", p.y, "}")
 
 
-  (==)(a::Point, b::Point)    = a.x == b.x && a.y == b.y
-  (≈)(a::Point, b::Point)     = isapprox(a.x, b.x, atol=1e-8) && isapprox(a.y, b.y, atol=1e-8)
-  (*)(a::Float64, b::Point)   = Point(a * b.x, a * b.y)
-  (*)(a::Point,   b::Float64) = b * a
+  (==)(a::Point,  b::Point)   = a.x == b.x && a.y == b.y
+  (≈)(a::Point,   b::Point)   = isapprox(a.x, b.x, atol=1e-8) && isapprox(a.y, b.y, atol=1e-8)
+  (*)(a::Number,  b::Point)   = Point(a * b.x, a * b.y)
+  (*)(a::Point,   b::Number)  = b * a
   (+)(a::Point,   b::Point)   = Point(a.x + b.x, a.y + b.y)
   (-)(a::Point,   b::Point)   = Point(a.x - b.x, a.y - b.y)
 
@@ -61,7 +61,7 @@ module ParticleMovement
 	 direction::Point
   end
 
-  pointsOnDifferentSidesOfLine(l::Line, a::Point, b::Point) =
+  points_on_different_sides_of_line(l::Line, a::Point, b::Point) =
      return ((l.p1.y - l.p2.y) * (a.x - l.p1.x)  + (l.p2.x - l.p1.x) * (a.y - l.p1.y)) *
             ((l.p1.y - l.p2.y) * (b.x - l.p1.x) +  (l.p2.x - l.p1.x) * (b.y - l.p1.y)) < 0
  
@@ -74,25 +74,25 @@ module ParticleMovement
   end
 
 
- sampleBarrier = Line(Point(1.0, 0), Point(2.0, 0), -1.0, 0.0, 1.0, Point(1,0))
+ SAMPLE_BARRIER = Line(Point(1.0, 0), Point(2.0, 0), -1.0, 0.0, 1.0, Point(1,0))
  
- function reflectThroughLine(l::Line, p::Point) 
+ function reflect_through_line(l::Line, p::Point) 
     divisor = l.a^2 + l.b^2
     prex = p.x * (l.a^2 - l.b^2) - 2*l.b*(l.a * p.y + l.c)
     prey = p.y * (l.b^2 - l.a^2) - 2*l.a*(l.b * p.x + l.c)
     return Point(prex/divisor, prey/divisor)
  end
 
- innerProduct(v1::Point, v2::Point) = v1.x*v2.x + v1.y*v2.y
+ inner_product(v1::Point, v2::Point) = v1.x*v2.x + v1.y*v2.y
 
- vectorLength(p::Point) = p.x^2 + p.y^2
+ vector_length(p::Point) = p.x^2 + p.y^2
 
  angleBetweenVectors(v1::Point, v2::Point) =
-     acos(innerProduct(v1, v2)/(vectorLength(v1) * vectorLength(v2)))
+     acos(inner_product(v1, v2)/(vector_length(v1) * vector_length(v2)))
 
 
- function reflectThroughLine(l::Line, p::ParticleState)::ParticleState
-   newPos   = reflectThroughLine(l, p.pos)
+ function reflect_through_line(l::Line, p::ParticleState)::ParticleState
+   newPos   = reflect_through_line(l, p.pos)
    angle    = angleBetweenVectors(l.direction, p.speed)
    newSpeed = rotate(p.speed, 2*angle)
    return ParticleState(p.id, p.mass, newPos, newSpeed)
@@ -105,9 +105,9 @@ module ParticleMovement
   (==)(a::ParticleState, b::ParticleState) = a.mass == b.mass && a.pos == b.pos && a.speed == b.speed
 
 
-  asComplex(p::Point)              = p.x + 1im * p.y
-  asPoint(c::Complex{Float64})     = Point(real(c), imag(c))
-  rotate(p::Point, angle::Float64) = asPoint(asComplex(p) * exp(1im * angle))
+  as_complex(p::Point)              = p.x + 1im * p.y
+  as_point(c::Complex)     = Point(real(c), imag(c))
+  rotate(p::Point, angle::Number) = as_point(as_complex(p) * exp(1im * angle))
 
   @test Point(0.0,1.0) ≈ rotate(Point(1.0, 0.0), π/2)
 
@@ -124,23 +124,23 @@ module ParticleMovement
 	   return ParticleState(a.id, a.mass, a.pos, newVa), ParticleState(b.id, b.mass, b.pos, newVb)
   end
 
-  randomPoint(dx::Float64, dy::Float64) =
+  random_point(dx::Float64, dy::Float64) =
        Point(rand()*dx - dx/2,
 	     rand()*dy - dy/2)
 
-  randomDirection() =
+  random_direction() =
        rotate(Point(0.0, 1.0), rand()*2*π)
 
 
    # Make an (eventually) random particle.
-   randomParticle(id::Int64, mass::Float64, speed::Float64, dx::Float64, dy::Float64) =
-	    ParticleState(id, mass, randomPoint(dx, dy), randomDirection()*speed)
+   random_particle(id::Int64, mass::Float64, speed::Float64, dx::Float64, dy::Float64) =
+	    ParticleState(id, mass, random_point(dx, dy), random_direction()*speed)
 
-   randomEnsemble(mass::Float64, speed::Float64, dx::Float64, dy::Float64, n::Int64) =
-	   Set{ParticleState}([randomParticle(id, mass, speed, dx, dy) for id in 1:n])
+   random_ensemble(mass::Float64, speed::Float64, dx::Float64, dy::Float64, n::Int64) =
+	   Set{ParticleState}([random_particle(id, mass, speed, dx, dy) for id in 1:n])
 
  
-   @test 3 == length(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3))
+   @test 3 == length(random_ensemble(1.0, 1.0,  1.0, 1.0, 3))
 
 
    function pointToImageCoord(pos::Point, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Tuple{Int64, Int64}
@@ -150,7 +150,7 @@ module ParticleMovement
    end
 
 
-   function paintDot(
+   function paint_dot(
    	    img,
    	    maxx::Float64, maxy::Float64, pos::Point)
            xdim, ydim = size(img)
@@ -162,12 +162,12 @@ module ParticleMovement
 
    # TODO: Test missing
 
-   function imgOfParticles(
+   function img_of_particles!(
    	    target,
    	    particles::Set{ParticleState},
       	    maxx::Float64,
 	    maxy::Float64)
-       foreach(p -> paintDot(target, maxx, maxy,  p), [p.pos for p in particles])
+       foreach(p -> paint_dot(target, maxx, maxy,  p), [p.pos for p in particles])
        return target
    end
 
@@ -178,22 +178,20 @@ module ParticleMovement
    #         - Calculate a perfectly elastic collision between the curve and the particle,
    #               modifying the movement
 
-   function  basicMovement(p::ParticleState) 
+   function  basic_movement(p::ParticleState) 
       pPrime =  ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
 
       # Handling reflections via a line bar
-      if pointsOnDifferentSidesOfLine(sampleBarrier, p.pos, pPrime.pos)
-         pPrime = reflectThroughLine(sampleBarrier, pPrime)
+      if points_on_different_sides_of_line(SAMPLE_BARRIER, p.pos, pPrime.pos)
+         pPrime = reflect_through_line(SAMPLE_BARRIER, pPrime)
       end
 
       return pPrime
    end	     
 
-             
-	     
 
 
-   function handleCollisionsBetweenParticles(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
+   function handle_collisions_between_particles(particles::Set{ParticleState},  xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Set{ParticleState}
        result = []
        for (key, partition) in partition(particles, xdim, ydim, maxx, maxy)
            prev = missing
@@ -223,17 +221,17 @@ module ParticleMovement
       return dict
    end
 
-  @test 3 == length(handleCollisionsBetweenParticles(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+  @test 3 == length(handle_collisions_between_particles(random_ensemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
 
   progress(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64) =
-        handleCollisionsBetweenParticles(Set{ParticleState}([basicMovement(p) for p in particles]),
+        handle_collisions_between_particles(Set{ParticleState}([basic_movement(p) for p in particles]),
                          xdim, ydim, maxx, maxy)
 
 
-  @test 3 == length(progress(randomEnsemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+  @test 3 == length(progress(random_ensemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
 
    function movie(frames::Int64, particles::Int64)
-         state = ParticleMovement.randomEnsemble(1.0, 1.0,  100.0, 100.0,  particles)
+         state = ParticleMovement.random_ensemble(1.0, 1.0,  100.0, 100.0,  particles)
          xdim = 1000
          ydim = 1000
          maxx = 1000.
@@ -242,7 +240,7 @@ module ParticleMovement
          for i in 1:frames
            println("Generating frame ", i , "/", frames)
            slice = view(result, :, :, i)
-           imgOfParticles(slice, state, maxx, maxy)
+           img_of_particles!(slice, state, maxx, maxy)
            state = progress(state, xdim, ydim, maxx, maxy)
          end
          return result
@@ -308,6 +306,6 @@ module ParticleMovement
 
 
 
-   runSmoketest(frames::Int=200, particles::Int=10000) = imshow(ParticleMovement.movie(frames, particles))
+   run_smoketest(frames::Int=200, particles::Int=10000) = imshow(ParticleMovement.movie(frames, particles))
 
 end
