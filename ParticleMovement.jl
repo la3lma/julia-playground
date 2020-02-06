@@ -153,7 +153,6 @@ module ParticleMovement
 	   end
    end
 
-   # TODO: Test missing
 
    function paint_points!(target, maxx::Float64, maxy::Float64, points)
        foreach(p -> paint_dot(target, maxx, maxy,  p), points)   
@@ -167,24 +166,8 @@ module ParticleMovement
 
    function img_of_line!(target, maxx::Float64, maxy::Float64, l::Line)
       paint_points!(target, maxx, maxy, points_on_line(l,200))
-   end
-
-   function img_of_particles!(
-   	    target,
-   	    particles::Set{ParticleState},
-      	    maxx::Float64,
-	    maxy::Float64)
-       paint_points!(target, maxx, maxy, [p.pos for p in particles])
-       return target
-   end
 
 
-   # TODO:
-   #  - Add collisions with curves.   Do it like this:
-   #     - Did the particle cross the curve?, if so then
-   #         - Calculate a perfectly elastic collision between the curve and the particle,
-   #               modifying the movement
-   #  - Draw the barriers particles can collide against
 
    function  basic_movement(p::ParticleState) 
       pPrime =  ParticleState(p.id, p.mass, p.pos + p.speed, p.speed)
@@ -353,3 +336,11 @@ module ParticleMovement
 
   end
 end
+
+   # TODO:
+   #  - Add collisions with curves.   Do it like this:
+   #     - Did the particle cross the curve?, if so then
+   #         - Calculate a perfectly elastic collision between the curve and the particle,
+   #               modifying the movement
+   #  - Draw the barriers particles can collide against
+   #  - https://github.com/jrevels/YASGuide
