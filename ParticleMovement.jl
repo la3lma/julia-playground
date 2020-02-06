@@ -21,7 +21,7 @@ module ParticleMovement
   using Plots
 
   using Images, TestImages, Colors, ImageView, GtkReactive
-  Import Base.+
+  import Base.+
   import Base.-
   import Base.*
   import Base./
@@ -47,11 +47,6 @@ module ParticleMovement
   (+)(a::Point,   b::Point)   = Point(a.x + b.x, a.y + b.y)
   (-)(a::Point,   b::Point)   = Point(a.x - b.x, a.y - b.y)
   (/)(a::Point,   n::Number)  = Point(a.x/n , a.y/n)  
-
-
-  @test Point(0.,0.) == Point(0.,0.)
-  @test Point(0.,0.) != Point(1.0, 0.)
-  @test Point(0.,0.) != Point(0.0, 1.)
 
 
   struct Line
@@ -111,7 +106,7 @@ module ParticleMovement
   as_point(c::Complex)     = Point(real(c), imag(c))
   rotate(p::Point, angle::Number) = as_point(as_complex(p) * exp(1im * angle))
 
-  @test Point(0.0,1.0) ≈ rotate(Point(1.0, 0.0), π/2)
+
 
   coll(a::ParticleState, b::ParticleState)  =
  	          a.speed * (2*a.mass / (a.mass + b.mass)) - b.speed * ((a.mass - b.mass)/(a.mass + b.mass))
@@ -140,10 +135,6 @@ module ParticleMovement
 
    random_ensemble(mass::Float64, speed::Float64, dx::Float64, dy::Float64, n::Int64) =
 	   Set{ParticleState}([random_particle(id, mass, speed, dx, dy) for id in 1:n])
-
- 
-   @test 3 == length(random_ensemble(1.0, 1.0,  1.0, 1.0, 3))
-
 
    function pointToImageCoord(pos::Point, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64)::Tuple{Int64, Int64}
       x = 1 + xdim/2  + xdim * (pos.x / maxx) 
@@ -238,14 +229,14 @@ module ParticleMovement
       return dict
    end
 
-  @test 3 == length(handle_collisions_between_particles(random_ensemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+
 
   progress(particles::Set{ParticleState}, xdim::Int64, ydim::Int64, maxx::Float64, maxy::Float64) =
         handle_collisions_between_particles(Set{ParticleState}([basic_movement(p) for p in particles]),
                          xdim, ydim, maxx, maxy)
 
 
-  @test 3 == length(progress(random_ensemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+
 
    function movie(frames::Int64, particles::Int64)
          state = ParticleMovement.random_ensemble(1.0, 1.0,  100.0, 100.0,  particles)
@@ -326,4 +317,36 @@ module ParticleMovement
 
    run_smoketest(frames::Int=200, particles::Int=10000) = imshow(ParticleMovement.movie(frames, particles))
 
-End
+
+
+   ## Unit tests
+ @testset "Unit tests for particle movements" begin
+
+   @testset "Basic arithmetic operations on points" begin
+      @test Point(0.,0.) == Point(0.,0.)
+      @test Point(0.,0.) != Point(1.0, 0.)
+      @test Point(0.,0.) != Point(0.0, 1.)
+      @test Point(0.0,1.0) ≈ rotate(Point(1.0, 0.0), π/2)
+   end
+
+
+   @testset "Generation of random ensembles" begin
+     sizeOfEnsemble = 3
+     @test sizeOfEnsemble == length(random_ensemble(1.0, 1.0,  1.0, 1.0, sizeOfEnsemble))
+   end
+
+   @testset "Collission management" begin
+       # Test that the handling of collissions don't change the number of
+       # particles in the ensemble
+       sizeOfEnsemble = 3
+       @test sizeOfEnsemble == length(handle_collisions_between_particles(random_ensemble(1.0, 1.0,  1.0, 1.0, sizeOfEnsemble), 1000, 1000, 1000., 1000.))
+   end
+
+   @testset "Simulation progression" begin
+      # Test that progressing the simulation isn't changing the number
+      # of particles in the ensemble
+      @test 3 == length(progress(random_ensemble(1.0, 1.0,  1.0, 1.0, 3), 1000, 1000, 1000., 1000.))
+   end
+
+  end
+end
