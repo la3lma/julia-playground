@@ -24,6 +24,7 @@ module ParticleMovement
   import Base.+
   import Base.-
   import Base.*
+  import Base./
   import Base.==
   import Base.≈  
   import Base.show
@@ -45,6 +46,7 @@ module ParticleMovement
   (*)(a::Point,   b::Number)  = b * a
   (+)(a::Point,   b::Point)   = Point(a.x + b.x, a.y + b.y)
   (-)(a::Point,   b::Point)   = Point(a.x - b.x, a.y - b.y)
+  (/)(a::Point,   n::Number)  = Point(a.x/n , a.y/n)  
 
 
   @test Point(0.,0.) == Point(0.,0.)
@@ -74,7 +76,7 @@ module ParticleMovement
   end
 
 
- SAMPLE_BARRIER = Line(Point(1.0, 0), Point(2.0, 0), -1.0, 0.0, 1.0, Point(1,0))
+ SAMPLE_BARRIER = Line(Point(0.0, 150), Point(100.0, 150), -150.0, 0.0, 1.0, Point(1,0))
  
  function reflect_through_line(l::Line, p::Point) 
     divisor = l.a^2 + l.b^2
@@ -162,12 +164,26 @@ module ParticleMovement
 
    # TODO: Test missing
 
+   function paint_points!(target, maxx::Float64, maxy::Float64, points)
+       foreach(p -> paint_dot(target, maxx, maxy,  p), points)   
+   end
+
+   function points_on_line(l::Line, pointsOnLine::Int)
+      p1 = l.p1
+      delta = (l.p2 - l.p1) / pointsOnLine
+      return [p1 + delta * i for i in 1:pointsOnLine]
+   end
+
+   function img_of_line!(target, maxx::Float64, maxy::Float64, l::Line)
+      paint_points!(target, maxx, maxy, points_on_line(l,200))
+   end
+
    function img_of_particles!(
    	    target,
    	    particles::Set{ParticleState},
       	    maxx::Float64,
 	    maxy::Float64)
-       foreach(p -> paint_dot(target, maxx, maxy,  p), [p.pos for p in particles])
+       paint_points!(target, maxx, maxy, [p.pos for p in particles])
        return target
    end
 
@@ -240,6 +256,7 @@ module ParticleMovement
          for i in 1:frames
            println("Generating frame ", i , "/", frames)
            slice = view(result, :, :, i)
+	   img_of_line!(slice, maxx, maxy, SAMPLE_BARRIER)
            img_of_particles!(slice, state, maxx, maxy)
            state = progress(state, xdim, ydim, maxx, maxy)
          end
