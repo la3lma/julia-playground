@@ -340,6 +340,9 @@ module ParticleMovement
        # particles in the ensemble
        sizeOfEnsemble = 3
        @test sizeOfEnsemble == length(handle_collisions_between_particles(random_ensemble(1.0, 1.0,  1.0, 1.0, sizeOfEnsemble), 1000, 1000, 1000., 1000.))
+       # TBD:
+       #   * Testing collissions between individual particles.
+       #   * Testing collisions between particle and line.
    end
 
    @testset "Simulation progression" begin
