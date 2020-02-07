@@ -78,27 +78,31 @@ module AuctionSimulator
   end
   
   function run_auction(numOfActors::Int, noOfEpisodes::Int)
-    gmm = MixtureModel(
-       Normal.([-1.0, 0.0, 3.0], # mean vector
-       [0.3, 0.5, 1.0]), # std vector
-       [0.25, 0.25, 0.5] # component weights
-    )
 
-    # Range to sample over (actual utility values)
-    utilityValues = 0.0:0.01:6.0
-
-    # pdf vector with resolution 0.01 (probabilities of individual
-    # utilities)
-    utilityDistribution = pdf.(gmm, utilityValues)
-
-    actors = initialize_actors_with_fixed_pdf(numOfActors, utilityDistribution, utilityValues)
+    actors = initialize_actors_with_fixed_pdf(numOfActors, [1], [1])
 
     result = zeros(noOfEpisodes, numOfActors * 2)
 
     for episode in 1:noOfEpisodes
+
       # Run one round of bid-generation
       for a in actors
-	  a.bid = max(0.0,  a.fraction * expected_utility(a))
+
+          # Give the actor a probability distribution and some
+	  # actual values to range over.  Eventually they will be
+	  # somewhat different for the different actors, but we start out by
+	  # them being exactly the same.
+          gmm = MixtureModel(
+	     Normal.([-1.0, 0.0, 3.0], # mean vector
+	            [0.3, 0.5, 1.0]), # std vector
+		           [0.25, 0.25, 0.5] # component weights
+	       )
+	  a.utilities = 0.0:0.01:6.0	       
+	  a.distribution = pdf.(gmm, a.utilities)
+
+
+          # Then set up the bid
+ 	  a.bid = max(0.0,  a.fraction * expected_utility(a))
       end
 
       # Find highest bidder
