@@ -36,6 +36,7 @@ module AuctionSimulator
   import Plots
   import KernelDensity
   using Distributions
+  using Printf
 
 
   mutable struct Actor
@@ -94,14 +95,16 @@ module AuctionSimulator
 	  # them being exactly the same.
           gmm = MixtureModel(
 	     Normal.([-1.0, 0.0, 3.0], # mean vector
-	            [0.3, 0.5, 1.0]), # std vector
-		           [0.25, 0.25, 0.5] # component weights
+	             [0.3, 0.5, 1.0]), # std vector
+		     [0.25, 0.25, 0.5] # component weights
 	       )
-	  a.utilities = 0.0:0.01:6.0	       
+
+          lowerLimit = -3 + 4*rand()
+          upperLimit =  2 + 4*rand()
+	  a.utilities = lowerLimit:0.01:upperLimit
 	  a.distribution = pdf.(gmm, a.utilities)
 
-
-          # Then set up the bid
+	  # Then set up the bid
  	  a.bid = max(0.0,  a.fraction * expected_utility(a))
       end
 
@@ -114,7 +117,7 @@ module AuctionSimulator
       estimatedProfit = expectedUtility - winner.bid	
       winner.cumulatedProfit += estimatedProfit
 
-      println("Winner = ", winner.id, ", bid = ", winner.bid, ", utility= ", expectedUtility, ", profit = " , estimatedProfit)
+      # @printf("Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", winner.id, winner.bid, expectedUtility, estimatedProfit) 
 
       for i in 1:numOfActors
       	  result[episode, i]   = actors[i].cumulatedProfit
