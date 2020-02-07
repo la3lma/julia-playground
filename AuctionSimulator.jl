@@ -39,6 +39,9 @@ module AuctionSimulator
 
 
   mutable struct Actor
+
+     id::Int
+     
      # This is a distribution where each index represents a probability
      # for the utility of that value (so index 1 has the probability of
      # utility 1, index 2 the probability of utility 2, etc.)  We are also
@@ -47,6 +50,9 @@ module AuctionSimulator
      # and the utility for that value, is the cumulated utilities up to
      # the value chosen.
      distribution:: Array{Float64, 1}
+
+     # The utility values
+     utilities:: Array{Float64, 1}
 
      # The strategy we'll use is: For the utilty function used by
      # the actor, this is the perentile at which we will make our bid.
@@ -61,52 +67,16 @@ module AuctionSimulator
      cumulatedProfit :: Float64
   end
 
-  function find_percentile_value(pdf, fraction::Float64)
-    sum = 0
-    delta = 1/length(pdf)
-    for i in 1:length(pdf)
-       if sum >= fraction
-         return break
-       end
-       sum += pdf[i]
-    end
-    return sum * delta
-  end
+  expected_utility(a::Actor) = sum(a.distribution[i] * a.utilities[i] for i in 1:length(a.utilities))
 
-  # Utility is in the range 0-1
-  # Generate actors over an uniform distribution of fractions.
+  initialize_actors_with_fixed_pdf(numOfActors, pdf, utilities) = [Actor(i, pdf, utilities, 1/i, 0.0, 0.0) for i in 1:numOfActors]
 
-  initialize_actors_with_fixed_pdf(numOfActors, pdf) = [Actor( pdf, 1/i, 0.0, 0.0) for i in 1:numOfActors]
-
-  @test 300 == length(initialize_actors_with_fixed_pdf(300, [1.0]))
+  @test 300 == length(initialize_actors_with_fixed_pdf(300, [1.0], [3.0]))
 
   find_highest_bidder(agents) = reduce(agents) do a,b
        a.bid > b.bid ? a : b
   end
   
-  add_utility_for_winning!(a::Actor) = a.cumulatedProfit += estimated_utility(a) - a.bid
-
-  function find_percentile_index(dist, percentile)
-     sum = 0
-     for i in 1:length(dist)
-       if sum >= percentile
-          return i
-       else
-          sum += dist[i]
-       end
-     end
-     return length(dist)
-  end
-  
-  function estimated_utility(a::Actor)
-      random_index = find_percentile_index(a.distribution, rand())
-      sum = 0
-      for i in 1:random_index
-       sum += i * a.distribution[i]
-      end
-      return sum
-  end
-
   function run_auction(numOfActors::Int, noOfEpisodes::Int)
     gmm = MixtureModel(
        Normal.([-1.0, 0.0, 3.0], # mean vector
@@ -114,20 +84,21 @@ module AuctionSimulator
        [0.25, 0.25, 0.5] # component weights
     )
 
-    # Range to sample over
-    xs = 0.0:0.01:6.0
+    # Range to sample over (actual utility values)
+    utilityValues = 0.0:0.01:6.0
 
-    # pdf vector with resolution 0.1       
-    utilityFunction = pdf.(gmm, xs)
+    # pdf vector with resolution 0.01 (probabilities of individual
+    # utilities)
+    utilityDistribution = pdf.(gmm, utilityValues)
 
-    actors = initialize_actors_with_fixed_pdf(numOfActors, utilityFunction)
+    actors = initialize_actors_with_fixed_pdf(numOfActors, utilityDistribution, utilityValues)
 
     result = zeros(noOfEpisodes, numOfActors * 2)
 
     for episode in 1:noOfEpisodes
       # Run one round of bid-generation
       for a in actors
-	  a.bid = find_percentile_value(utilityFunction, a.fraction)
+	  a.bid = max(0.0,  a.fraction * expected_utility(a))
       end
 
       # Find highest bidder
@@ -135,7 +106,11 @@ module AuctionSimulator
 
       # Calculate utility of winning at price and add to
       # cumulative utility for actor
-      add_utility_for_winning!(winner)
+      expectedUtility =  expected_utility(winner)
+      estimatedProfit = expectedUtility - winner.bid	
+      winner.cumulatedProfit += estimatedProfit
+
+      println("Winner = ", winner.id, ", bid = ", winner.bid, ", utility= ", expectedUtility, ", profit = " , estimatedProfit)
 
       for i in 1:numOfActors
       	  result[episode, i]   = actors[i].cumulatedProfit
