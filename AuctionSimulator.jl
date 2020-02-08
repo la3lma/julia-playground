@@ -166,16 +166,25 @@ module AuctionSimulator
       #
       if (winner.bid != 0.0)
            expectedUtility, estimatedProfit = update_winners_profit!(winner)
-	   @printf("Episode %5d  Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", episode,  winner.id, winner.bid, expectedUtility, estimatedProfit) 
+	   @printf("Episode %5d  Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", episode,  winner.id, winner.bid, expectedUtility, estimatedProfit)
+#	   println("Winner wins = ", winner.wins)
       else
          @printf("Episode %5d  had no winner, highest bid was zero\n", episode)
       end
 
       # Update the result
       for i in 1:numOfActors
-	 result[episode, i]   = actors[i].cumulatedProfit
-	 result[episode, i+1] = actors[i].bid
-	 result[episode, i+2] = actors[i].wins
+      	 a = actors[i]
+         id = Int(a.id)
+	 cp = a.cumulatedProfit
+	 bid = a.bid
+	 wins = a.wins
+	 cumulatedProfit = 
+     	 # @printf("recording episode = %f, actor %d, cp = %f, bid =%f, wins=%f\n", episode,  id , cp, bid, wins)
+	 result[episode, 3*(id - 1) + 1] = cp
+	 result[episode, 3*(id - 1) + 2] = bid
+	 result[episode, 3*(id - 1) + 3] = wins
+	 # println(result[episode,:])
       end
     end
     return result
