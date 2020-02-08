@@ -166,10 +166,10 @@ module AuctionSimulator
       #
       if (winner.bid != 0.0)
            expectedUtility, estimatedProfit = update_winners_profit!(winner)
-	   @printf("Episode %5d  Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", episode,  winner.id, winner.bid, expectedUtility, estimatedProfit)
+#	   @printf("Episode %5d  Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", episode,  winner.id, winner.bid, expectedUtility, estimatedProfit)
 #	   println("Winner wins = ", winner.wins)
       else
-         @printf("Episode %5d  had no winner, highest bid was zero\n", episode)
+#         @printf("Episode %5d  had no winner, highest bid was zero\n", episode)
       end
 
       # Update the result
