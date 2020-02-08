@@ -181,9 +181,9 @@ module AuctionSimulator
 	 wins = a.wins
 	 cumulatedProfit = 
      	 # @printf("recording episode = %f, actor %d, cp = %f, bid =%f, wins=%f\n", episode,  id , cp, bid, wins)
-	 result[episode, 3*(id - 1) + 1] = cp
-	 result[episode, 3*(id - 1) + 2] = bid
-	 result[episode, 3*(id - 1) + 3] = wins
+	 result[episode, 3(id - 1) + 1] = cp
+	 result[episode, 3(id - 1) + 2] = bid
+	 result[episode, 3(id - 1) + 3] = wins
 	 # println(result[episode,:])
       end
     end
