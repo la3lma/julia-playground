@@ -69,13 +69,16 @@ module AuctionSimulator
 
      # The cumulated profit for this actor
      cumulatedProfit :: Float64
+
+     # number of wins
+     wins :: Float64
   end
 
   # XXX A kludge
   expected_utility(u::UtilityExpectations) = sum(u.distribution[i] * u.utilities[i] for i in 1:length(u.utilities))
   expected_utility(a::Actor) = expected_utility(a.utility)
 
-  initialize_actors_with_fixed_pdf(numOfActors, pdf, utilities) = [Actor(i, UtilityExpectations(pdf, utilities), 1/i, 0.0, 0.0) for i in 1:numOfActors]
+  initialize_actors_with_fixed_pdf(numOfActors, pdf, utilities) = [Actor(i, UtilityExpectations(pdf, utilities), 1/i, 0.0, 0.0, 0.0 ) for i in 1:numOfActors]
 
   @test 300 == length(initialize_actors_with_fixed_pdf(300, [1.0], [3.0]))
 
@@ -83,6 +86,18 @@ module AuctionSimulator
        a.bid > b.bid ? a : b
   end
 
+
+  find_highest_bid(agents) = find_highest_bidder(agents).bid
+
+  function find_highest_bidders(agents)
+     highest_bid = find_highest_bid(agents)
+     return filter(a -> a.bid ==  highest_bid, agents)
+  end
+
+  function find_random_highest_bidder(agents)
+      highest_bidders = find_highest_bidders(agents)
+      return highest_bidders[rand(1:length(highest_bidders) )]
+  end
 
 
   # Generate a random utility for an actor. The utility is a pair of vectors, the first
@@ -130,32 +145,37 @@ module AuctionSimulator
 	 expectedUtility =  expected_utility(winner)
 	 estimatedProfit = expectedUtility - winner.bid	
 	 winner.cumulatedProfit += estimatedProfit
-	 return estimatedUtility, estimatedProfit
+	 winner.wins += 1
+	 return expectedUtility, estimatedProfit
   end
 
   function run_auction(numOfActors::Int, noOfEpisodes::Int)
 
     actors = initialize_actors_with_fixed_pdf(numOfActors, [1], [1])
-    result = zeros(noOfEpisodes, numOfActors * 2)
+    result = zeros(noOfEpisodes, numOfActors * 3)
 
     for episode in 1:noOfEpisodes
 
       assign_new_random_utilities!(actors)
 
-      # Find highest bidder
-      winner = find_highest_bidder(actors)
+      # Find a winner. There may be more than one with the same
+      # highest bid, and if there is, chose one at random.
+      winner = find_random_highest_bidder(actors)
 
+      # If there was an actual winner, award the profits to that winner
+      #
       if (winner.bid != 0.0)
            expectedUtility, estimatedProfit = update_winners_profit!(winner)
-
-	   # @printf("Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", winner.id, winner.bid, expectedUtility, estimatedProfit) 
-
-	   for i in 1:numOfActors
-	       result[episode, i]   = actors[i].cumulatedProfit
-	       result[episode, i+1] = actors[i].bid
-	   end
+	   @printf("Episode %5d  Winner = %d, bid = %6.2f, utility = %6.2f, profit = %6.2f\n", episode,  winner.id, winner.bid, expectedUtility, estimatedProfit) 
       else
-         @printf("Episode %d had no winner, highest bid was zero\n", episode)
+         @printf("Episode %5d  had no winner, highest bid was zero\n", episode)
+      end
+
+      # Update the result
+      for i in 1:numOfActors
+	 result[episode, i]   = actors[i].cumulatedProfit
+	 result[episode, i+1] = actors[i].bid
+	 result[episode, i+2] = actors[i].wins
       end
     end
     return result
