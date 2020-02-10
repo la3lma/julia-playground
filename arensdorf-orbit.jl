@@ -12,8 +12,8 @@ module ArensdorfOrbit
 
 =#
 
-  using DifferentialEquations,  ForwardDiff, LinearAlgebra
-  using OrdinaryDiffEq, Plots; pgfplots()  
+  using DifferentialEquations, ForwardDiff, LinearAlgebra
+  using OrdinaryDiffEq
   using Plots
 
   # Bootstrapping using Lorentz attractor.  This is a first order
@@ -48,13 +48,12 @@ module ArensdorfOrbit
      initial_positions = [0.0,0.1]
      initial_velocities = [0.5,0.0]
      prob = SecondOrderODEProblem(HH_acceleration,initial_velocities,initial_positions,tspan)
-     sol = solve(prob, KahanLi8(), dt=1/10);
+     sol = solve(prob, KahanLi8(), Dt=1/10);
      plot(sol,vars=(1,2,3))          
    end
 
-
    # ... does not work at all, the whole thing blows up due
-   # to numerical instalbility
+   # to numerical instalbility.
 
    function plot_arensdorf()
      μ   = 0.012277471
@@ -71,17 +70,17 @@ module ArensdorfOrbit
 	 x′′ = x + 2y′  + μ′*(x + μ)/D1 - μ*(x - μ′)/D2
 	 y′′ = y + 2x′  + μ′*y/D1       - μ*y/D2
 
-	 println("x = ", x, ",y  = ", y)
-
 	 du[1] = x′′
 	 du[2] = y′′
      end
+
+    # Sensitivity analysis must be added to this code
 
      initial_positions =  [0.994,  0]
      initial_velocities = [0.0,   -2.001585106]
      tspan = (0.0, 50.0)
      prob = SecondOrderODEProblem(arensdorf_orbit, initial_velocities, initial_positions, tspan)
-     sol = solve(prob, DPRKN12(), dt=1/100);
+     sol = solve(prob, DPRKN12(), dt=1/10000);
      plot(sol,vars=(1,2))     
    end
 end
