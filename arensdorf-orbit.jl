@@ -36,7 +36,7 @@ module ArensdorfOrbit
     plot(sol,vars=(1,2,3))
   end
 
-   #WORKS VERY NICELY
+   # .... work nicely too.
    function plot_hh()
      function HH_acceleration(dv,v,u,p,t)
        x,y  = u
