@@ -23,21 +23,31 @@ module ArensdorfOrbit
      du[3] = u[1]*u[2] - (8/3)*u[3]
   end
 
+  # ... works abslutely awsomely!
+  function plotLorenz()
+    u0 = [1.0;0.0;0.0]
+    tspan = (0.0,100.0)
+    prob = ODEProblem(lorenz!,u0,tspan)
+    sol = solve(prob)
+    plot(sol,vars=(1,2,3))
+  end
+
+
 
    function draw_arensdorf()
      # 	
      # μ′
      μ     = 0.012277471
-     muprime = 1 - μ
+     μ′  = 1 - μ
 
      function arensdorf_orbit(du, u, x, p, t)
          x,y = u
 	 dx,dy = du
-	 D1 = ((x + mu)^2       + y^2)^(3/2)
-	 D2 = ((x - muprime)^2  + y^2)^(3/2)
+	 D1 = ((x + μ)^2       + y^2)^(3/2)
+	 D2 = ((x - μ′)^2  + y^2)^(3/2)
 
-	 du[1] = x + 2dy  + muprime*(x + mu)/D1 - mu*(x - muprime)/D2
-	 du[2] = y + 2dx  + muprime*y/D1 - mu*y/D2
+	 du[1] = x + 2dy  + μ′*(x + μ)/D1 - μ*(x - μ′)/D2
+	 du[2] = y + 2dx  + μ′*y/D1       - μ*y/D2
      end
 
      initial_positions =  [0.994,  0]
@@ -48,12 +58,5 @@ module ArensdorfOrbit
      plot(sol,vars=(1,2))     
    end
 
-  function plotLorenz()
-    u0 = [1.0;0.0;0.0]
-    tspan = (0.0,100.0)
-    prob = ODEProblem(lorenz!,u0,tspan)
-    sol = solve(prob)
-    plot(sol,vars=(1,2,3))
-  end
 
 end
