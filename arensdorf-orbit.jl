@@ -20,15 +20,11 @@ module ArensdorfOrbit
   # differential equation, but many of the same
   # techniques are used, so it's a good starting point
   function lorenz!(du,u,p,t)
-    x, y, z  = u
+     x, y, z  = u
 
      du[1] = 10.0*(y-x)
      du[2] = x*(28.0-z) - y
      du[3] = x*y - (8/3)*z
-     
-#     du[1] = 10.0*(u[2]-u[1])
-#     du[2] = u[1]*(28.0-u[3]) - u[2]
-#     du[3] = u[1]*u[2] - (8/3)*u[3]
   end
 
   # ... works abslutely awsomely!
@@ -39,7 +35,6 @@ module ArensdorfOrbit
     sol = solve(prob)
     plot(sol,vars=(1,2,3))
   end
-
 
    #WORKS VERY NICELY
    function plot_hh()
@@ -57,14 +52,16 @@ module ArensdorfOrbit
      plot(sol,vars=(1,2,3))          
    end
 
-   # ... does not work at all, the whole thing blows up numerically.
-   # ..bad
+
+   # ... does not work at all, the whole thing blows up due
+   # to numerical instalbility
+
    function plot_arensdorf()
      μ   = 0.012277471
      μ′  = 1 - μ
 
-     function arensdorf_orbit(du, u, x, p, t)
-         x, y  = x
+     function arensdorf_orbit(du, u, z, p, t)
+         x, y  = z
 	 x′,y′ = u
 
 	 D(z) = ((x + z )^2  + y^2)^(3/2)
@@ -82,11 +79,9 @@ module ArensdorfOrbit
 
      initial_positions =  [0.994,  0]
      initial_velocities = [0.0,   -2.001585106]
-     tspan = (0.0,50.0)
+     tspan = (0.0, 50.0)
      prob = SecondOrderODEProblem(arensdorf_orbit, initial_velocities, initial_positions, tspan)
-     sol = solve(prob, DPRKN12xs(), dt=1/1000);
-     plot(sol,vars=(1,2,3))     
+     sol = solve(prob, DPRKN12(), dt=1/100);
+     plot(sol,vars=(1,2))     
    end
-
-
 end
