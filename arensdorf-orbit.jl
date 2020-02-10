@@ -68,13 +68,13 @@ module ArensdorfOrbit
 	 D2 = D(-μ′)	 
 
 	 x′′ = x + 2y′  + (μ′*(x + μ)/D1) - (μ*(x - μ′)/D2)
-	 y′′ = y + 2x′  + (μ′*y/D1)       - (μ*y/D2)
+	 y′′ = y + 2x′  - (μ′*y/D1)       - (μ*y/D2)
 
 	 du[1] = x′′
 	 du[2] = y′′
      end
 
-    # Sensitivity analysis must be added to this code
+     # Sensitivity analysis must be added to this code
 
      initial_positions =  [0.994,  0]
      initial_velocities = [0.0,   -2.001585106]
