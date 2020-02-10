@@ -52,9 +52,7 @@ module ArensdorfOrbit
      plot(sol,vars=(1,2,3))          
    end
 
-   # ... does not work at all, the whole thing blows up due
-   # to numerical instalbility.
-
+   #  This also works now
    function plot_arensdorf()
      μ   = 0.012277471
      μ′  = 1 - μ
@@ -78,9 +76,9 @@ module ArensdorfOrbit
 
      initial_positions =  [0.994,  0]
      initial_velocities = [0.0,   -2.001585106]
-     tspan = (0.0, 50.0)
+     tspan = (0.0, 10.0)
      prob = SecondOrderODEProblem(arensdorf_orbit, initial_velocities, initial_positions, tspan)
-     sol = solve(prob, DPRKN12(), dt=1/10000);
+     sol = solve(prob, KahanLi8(), dt=1/100);
      plot(sol,vars=(1,2))     
    end
 end
