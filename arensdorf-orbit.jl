@@ -35,19 +35,17 @@ module ArensdorfOrbit
 
 
    function draw_arensdorf()
-     # 	
-     # μ′
      μ     = 0.012277471
      μ′  = 1 - μ
 
      function arensdorf_orbit(du, u, x, p, t)
-         x,y = u
-	 dx,dy = du
-	 D1 = ((x + μ)^2       + y^2)^(3/2)
+         x, y  = u
+	 x′,y′ = du
+	 D1 = ((x + μ )^2  + y^2)^(3/2)
 	 D2 = ((x - μ′)^2  + y^2)^(3/2)
 
-	 du[1] = x + 2dy  + μ′*(x + μ)/D1 - μ*(x - μ′)/D2
-	 du[2] = y + 2dx  + μ′*y/D1       - μ*y/D2
+	 du[1] = x + 2y′  + μ′*(x + μ)/D1 - μ*(x - μ′)/D2
+	 du[2] = y + 2x′  + μ′*y/D1       - μ*y/D2
      end
 
      initial_positions =  [0.994,  0]
